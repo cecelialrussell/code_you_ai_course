@@ -20,3 +20,4 @@ transaction_id,date,customer_id,amount,type,description
 19,1/25/2020,681,5159.9,debit,Soldier green age much sound write chair.
 20,2/19/2020,33,6018.28,debit,What single suggest now stop.
 21,05/24/2025,542,165.03,credit,test transaction
+22,05/24/2025,542,95.06,debit,test transaction
