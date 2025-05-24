@@ -1,0 +1,142 @@
+import csv
+import os
+from datetime import datetime
+
+# --- Configuration ---
+CSV_FILE = 'financial_transactions.csv'
+ERROR_LOG_FILE = 'errors.txt'
+DATE_FORMAT = '%Y-%m-%d' # Adjust this if your date format is different (e.g., '%m/%d/%Y')
+
+# --- Helper Function for Logging Errors ---
+def log_error(message, log_file=ERROR_LOG_FILE):
+    """Prints an error message to the console and appends it to the log file."""
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    full_message = f"[{timestamp}] {message}"
+    print(full_message) # Print to console
+    try:
+        with open(log_file, 'a', encoding='utf-8') as f:
+            f.write(full_message + '\n')
+    except IOError as e:
+        print(f"CRITICAL ERROR: Could not write to log file '{log_file}': {e}")
+
+# --- Main Data Reading Function ---
+def process_financial_transactions(csv_filepath, error_log_filepath):
+    """
+    Reads the specified CSV file, handles errors, parses dates and amounts,
+    and returns a list of valid transaction dictionaries.
+    Invalid rows are skipped, and errors/warnings are logged.
+    """
+    transactions_data = []
+    error_count = 0
+    row_number = 0 # To track the original row number in the CSV
+
+    # Clear the error log file at the start of a new run
+    try:
+        if os.path.exists(error_log_filepath):
+            with open(error_log_filepath, 'w', encoding='utf-8') as f:
+                f.write("") # Clear contents
+        else:
+            # Ensure the directory exists if not present
+            log_dir = os.path.dirname(error_log_filepath)
+            if log_dir and not os.path.exists(log_dir):
+                os.makedirs(log_dir)
+    except Exception as e:
+        print(f"CRITICAL ERROR: Could not clear or create error log file '{error_log_filepath}': {e}")
+        # Proceed without clearing, but user should be aware
+
+    log_error(f"--- Starting processing of '{csv_filepath}' ---", log_file=error_log_filepath)
+
+    current_directory = os.getcwd()
+    log_error(f"Current working directory: {current_directory}", log_file=error_log_filepath)
+    full_path_attempted = os.path.join(current_directory, csv_filepath)
+    log_error(f"Attempting to open file at: {full_path_attempted}", log_file=error_log_filepath)
+
+    try:
+        with open(csv_filepath, 'r', newline='', encoding='utf-8') as csvfile:
+            csv_reader = csv.DictReader(csvfile)
+            for row in csv_reader:
+                row_number += 1
+                valid_row = True
+                original_row_id = row.get('transaction_id', f"Row {row_number}") # Use ID or row num
+
+                # 1. Parse Date
+                date_string = row.get('date')
+                if date_string:
+                    try:
+                        row['date'] = datetime.strptime(date_string, DATE_FORMAT).date()
+                    except ValueError:
+                        log_error(f"WARNING: Invalid date format '{date_string}' for transaction '{original_row_id}'. Skipping row.", log_file=error_log_filepath)
+                        valid_row = False
+                        error_count += 1
+                else:
+                    log_error(f"WARNING: Missing date for transaction '{original_row_id}'. Skipping row.", log_file=error_log_filepath)
+                    valid_row = False
+                    error_count += 1
+
+                # 2. Parse Amount (only if date was valid so far to avoid cascading errors)
+                if valid_row: # Only try amount if date was valid, otherwise row is already invalid
+                    amount_string = row.get('amount')
+                    if amount_string:
+                        try:
+                            row['amount'] = float(amount_string)
+                        except ValueError:
+                            log_error(f"WARNING: Invalid amount format '{amount_string}' for transaction '{original_row_id}'. Skipping row.", log_file=error_log_filepath)
+                            valid_row = False
+                            error_count += 1
+                    else:
+                        log_error(f"WARNING: Missing amount for transaction '{original_row_id}'. Skipping row.", log_file=error_log_filepath)
+                        valid_row = False
+                        error_count += 1
+
+                # 3. Add row if all checks passed
+                if valid_row:
+                    transactions_data.append(row)
+
+    except FileNotFoundError:
+        log_error(f"ERROR: The file '{csv_filepath}' was not found. Please ensure it is in the directory: '{current_directory}'", log_file=error_log_filepath)
+        error_count += 1
+        return None, error_count # Return None for data if file not found
+    except Exception as e:
+        log_error(f"CRITICAL ERROR: An unexpected error occurred while reading '{csv_filepath}': {e}", log_file=error_log_filepath)
+        error_count += 1
+        return None, error_count # Return None for data if unexpected error
+
+    log_error(f"--- Finished processing of '{csv_filepath}'. Total errors/warnings: {error_count} ---", log_file=error_log_filepath)
+    return transactions_data, error_count
+
+# --- Main Execution ---
+if __name__ == "__main__":
+    print(f"Processing '{CSV_FILE}' and logging errors to '{ERROR_LOG_FILE}'...")
+
+    # Process the file
+    loaded_transactions, total_errors = process_financial_transactions(CSV_FILE, ERROR_LOG_FILE)
+
+    if loaded_transactions is not None:
+        print(f"\n--- Processing Summary ---")
+        print(f"Successfully loaded {len(loaded_transactions)} valid transactions.")
+        print(f"Total errors/warnings encountered: {total_errors}")
+
+        if loaded_transactions:
+            print("\nFirst 3 loaded transactions (showing parsed data):")
+            for i, transaction in enumerate(loaded_transactions[:3]):
+                print(f"  Transaction {i+1}: {transaction}")
+                print(f"    Date type: {type(transaction['date'])}, Amount type: {type(transaction['amount'])}")
+            
+            # Example: Find highest transaction amount
+            if loaded_transactions:
+                max_amount_transaction = max(loaded_transactions, key=lambda x: x['amount'])
+                print(f"\nTransaction with highest amount: ID {max_amount_transaction['transaction_id']}, Amount: ${max_amount_transaction['amount']:.2f}, Date: {max_amount_transaction['date']}")
+
+            # Example: Count transactions by type
+            from collections import Counter
+            transaction_types = Counter(t['type'] for t in loaded_transactions)
+            print("\nTransaction types count:")
+            for trans_type, count in transaction_types.items():
+                print(f"  {trans_type}: {count}")
+
+        else:
+            print("No valid transactions were loaded.")
+    else:
+        print("\nFailed to load transactions due to a critical error. Check errors.txt for details.")
+
+    print(f"\nCheck '{ERROR_LOG_FILE}' for detailed error log.")
