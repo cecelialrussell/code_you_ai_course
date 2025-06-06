@@ -5,13 +5,12 @@ import os
 transactions = []
 max_id = 0
 ERROR_LOG_FILE = 'errors.txt'
-DATA_FILE = 'financial_transactions_short.csv'
 
 def _log_error(message):
     with open(ERROR_LOG_FILE, 'a') as f:
         f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
 
-def load_transactions(filename=DATA_FILE):
+def load_transactions(filename='financial_transactions_short.csv'):
     global transactions 
     global max_id 
 
