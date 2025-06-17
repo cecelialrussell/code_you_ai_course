@@ -326,6 +326,54 @@ def delete_transaction(transactions_list):
             log_error(f"An unexpected error occurred during deletion: {e}")
             break
 
+def analyze_transactions(transactions_list):
+    print("\n--- Financial Summary ---")
+    if not transactions_list:
+        print("No transactions to analyze. Please load or add transactions first.")
+        return
+    
+    total_credits = 0.0
+    total_debits = 0.0
+    total_transfers = 0.0
+    net_balance = 0.0
+    totals_by_type = {}
+
+    for transaction in transactions_list:
+        try:
+            amount = float(transaction.get('amount', 0))
+            transaction_type = transaction.get('type', 'unknown').lower()
+
+            if transaction_type == 'credit':
+                total_credits += amount
+            elif transaction_type == 'debit':
+                total_debits += amount
+            elif transaction_type == 'transfer':
+                total_transfers += amount
+
+            net_balance += amount
+
+            if transaction_type in totals_by_type:
+                totals_by_type[transaction_type] += amount
+            else:
+                totals_by_type[transaction_type] = amount
+        except (ValueError, TypeError) as e:
+            log_error(f"Error processing amount for financial analysis: {transaction.get('transaction_id', 'N/A')}. Error: {e}")
+            print(f"Warning: Skipping a transaction due to invalid amount for analysis (ID: {transaction.get('transaction_id', 'N/A')}).")
+            continue
+
+    print(f"Total Credits: ${total_credits:.2f}")
+    print(f"Total Debits: ${total_debits:.2f}")
+    print(f"Total Transfers: ${total_transfers:.2f}")
+    print(f"Net Balance: ${net_balance:.2f}")
+
+    print("\nTotals by Type:")
+    if totals_by_type:
+        for transaction_type, total_amount in totals_by_type.items():
+            print(f"- {transaction_type.replace('_', ' ').title()}: ${total_amount:.2f}")
+    else:
+        print("No categorized transactions.")
+
+
 def main():
     transactions_data = []
     initialize_error_log()
@@ -337,6 +385,7 @@ def main():
         print("3. View Transactions")
         print("4. Update Transactions")
         print("5. Delete Transactions")
+        print("6. Analyze Transactions")
         print("9. Exit")
 
         choice = input("Enter your choice (1-9): ").strip()
@@ -353,6 +402,8 @@ def main():
             update_transaction(transactions_data)
         elif choice == '5':
             delete_transaction(transactions_data)
+        elif choice == '6':
+            analyze_transactions(transactions_data)
         elif choice == '9':
             print("Exiting Smart Personal Finance Analyzer. Goodbye!")
             break
