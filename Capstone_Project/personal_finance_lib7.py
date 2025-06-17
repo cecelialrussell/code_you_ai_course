@@ -233,7 +233,6 @@ def update_transactions(transactions):
         else:
             print("Invalid choice. Please enter 1, 2, 3, or 0 to cancel.")
     
-    print("\nUpdated Transaction Details:")
 
 def delete_transactions(transactions):
     print("\n--- Delete Transaction ---")
@@ -277,4 +276,3 @@ def delete_transactions(transactions):
             print("Invalid input. Please enter a numerical transaction ID.")
         except Exception as e:
             print(f"An unexpcted error occurred: {e}")
-
