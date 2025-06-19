@@ -376,64 +376,16 @@ def analyze_transactions(transactions_list):
 def save_transactions(transactions_list, filename='financial_transactions_short.csv'):
     header = ['transaction_id', 'date', 'customer_id', 'amount', 'type', 'description']
 
-    existing_transactions = []
-    existing_transaction_identifiers = set()
-
-    if os.path.exists(filename) and os.path.getsize(filename) > 0:
-        try:
-            with open(filename, mode='r', newline='', encoding='utf-8') as file:
-                reader = csv.Reader(file)
-                if not all(field in reader.fieldnames for field in header):
-                    log_error(f"Warning: CSV header in '{filename}' does not fully match expected header. Data may not be read correctly.")
-
-                    for row in reader:
-                        try:
-                            if 'amount' in row:
-                                row['amount'] = float(row['amount'])
-                        except (ValueError, KeyError) as e:
-                            log_error(f"Error converting amount for row{row.get('transaction_id', 'N/A')} from '{filename}': {e}. Amount might be missing or invalid.")
-
-                        existing_transactions.append(row)
-
-                        identifier = row.get('transaction_id')
-                        if identifier:
-                            existing_transaction_identifiers.add(identifier)
-
-        except FileNotFoundError:
-            log_error(f"Error: File '{filename}' not found during read operation in save_transactions.")
-            existing_transactions = []
-            existing_transaction_identifiers = set()
-        except Exception as e:
-            log_error(f"An unexpected error occurred while reading existing transactions from '{filename}': {e}.")
-            existing_transactions = []
-            existing_transaction_identifiers = set()
-
-    new_transactions_to_add = []
-    for transaction in transactions_list:
-        transaction_id = transaction.get('transaction_id')
-
-        if transaction_id and transaction_id not in existing_transaction_identifiers:
-            new_transactions_to_add.append(transaction)
-            existing_transaction_identifiers.add(transaction_id)
-        elif not transaction_id:
-            log_error(f"Warning: Transaction missing 'transaction_id'. Skipping: {transaction}")
-    
-    all_unique_transactions = []
-
-    for trans in existing_transactions:
-        if 'amount' in trans:
-            try:
-                trans['amount'] = float(trans['amount'])
-            except (ValueError, TypeError):
-                log_error(f"Error: Amount for transaction ID {trans.get('transaction_id', 'N/A')} is not a valid number before saving. Saving as is.")
-
-        all_unique_transactions.append(trans)
-
     try:
         with open(filename, mode='w', newline='', encoding='utf-8') as file:
             writer = csv.DictWriter(file, fieldnames=header)
             writer.writeheader()
-            writer.writerows(all_unique_transactions)
+            for transaction in transactions_list:
+                transaction_for_write = transaction.copy()
+                if 'amount' in transaction_for_write and isinstance(transaction_for_write['amount'], (int, float)):
+                    transaction_for_write['amount'] = f"{transaction_for_write['amount']:.2f}"
+
+                writer.writerows(transaction_for_write)
         print(f"Transactions successfully saved to '{filename}'. {len(new_transactions_to_add)} new transactions added.")
     except Exception as e:
         log_error(f"Error writing transactions to '{filename}': {e}")
