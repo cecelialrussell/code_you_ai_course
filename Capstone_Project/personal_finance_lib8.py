@@ -472,7 +472,8 @@ def main():
         elif choice == '6':
             analyze_transactions(transactions_data)
         elif choice == '7':
-            save_transactions()
+            save_transactions(transactions_data)
+            print("Current transactions saved to file.")
         elif choice == '9':
             print("Exiting Smart Personal Finance Analyzer. Goodbye!")
             break
