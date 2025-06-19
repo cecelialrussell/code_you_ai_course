@@ -54,6 +54,7 @@ def load_transactions(filename='financial_transactions_short.csv'):
         if parsed_date:
             current_item['date'] = parsed_date.strftime("%Y-%m-%d")
         else:
+            print(f"DEBUG: Skipping transaction ID {current_item.get('transaction_id', 'N/A')} due to invalid date. Actual date value: '{date_str}'")
             log_error(f"Skipping transaction {current_item.get('transaction_id', 'N/A')}. Invalid date format '{date_str}'.")
             continue
 
@@ -71,6 +72,7 @@ def load_transactions(filename='financial_transactions_short.csv'):
             elif transaction_type == "credit" or transaction_type == "transfer":
                 current_item['amount'] = new_amount
             else:
+                print(f"DEBUG: Skipping transaction ID {current_item.get('transaction_id', 'N/A')} due to invalid type. Actual type value: '{transaction_type}'")
                 log_error(f"Skipping transaction {current_item.get('transaction_id', 'N/A')}. Invalid or empty type '{transaction_type}'.")
                 continue
 
@@ -385,12 +387,11 @@ def save_transactions(transactions_list, filename='financial_transactions_short.
                 if 'amount' in transaction_for_write and isinstance(transaction_for_write['amount'], (int, float)):
                     transaction_for_write['amount'] = f"{transaction_for_write['amount']:.2f}"
 
-                writer.writerows(transaction_for_write)
-        print(f"Transactions successfully saved to '{filename}'. {len(new_transactions_to_add)} new transactions added.")
+                writer.writerow(transaction_for_write)
+        print(f"Transactions successfully saved to '{filename}'.")
     except Exception as e:
         log_error(f"Error writing transactions to '{filename}': {e}")
         print(f"Error writing transactions to '{filename}': {e}")
-    
 
 def main():
     transactions_data = []
@@ -423,9 +424,9 @@ def main():
             delete_transaction(transactions_data)
         elif choice == '6':
             analyze_transactions(transactions_data)
-        elif choice == '7':
+        elif choice == '7': 
             save_transactions(transactions_data)
-            print("Current transactions saved to file.")
+            print("Transactions saved successfully.")
         elif choice == '9':
             print("Exiting Smart Personal Finance Analyzer. Goodbye!")
             break
