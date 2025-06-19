@@ -81,7 +81,7 @@ def load_transactions(filename='financial_transactions_short.csv'):
         except Exception as e:
             log_error(f"An unexpected error occurred processing transaction {current_item.get('transaction_id', 'N/A')}: {e}")
 
-    print(f"Successfully loaded and process {len(processed_transactions)} transactions.")
+    print(f"Successfully loaded and processed {len(processed_transactions)} transactions.")
     print(f"Transaction processing complete. Check {ERROR_LOG_FILE} for any logged issues.")
     return processed_transactions
 

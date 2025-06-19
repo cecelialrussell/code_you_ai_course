@@ -1,1 +1,2 @@
-[2025-06-19 07:38:33.328013] --- Transaction Processing Log Started ---
+[2025-06-19 07:40:14.734464] --- Transaction Processing Log Started ---
+[2025-06-19 07:40:47.409093] An unexpected error occurred while reading existing transactions from 'financial_transactions_short.csv': module 'csv' has no attribute 'Reader'.
