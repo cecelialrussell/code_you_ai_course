@@ -328,11 +328,13 @@ def delete_transaction(transactions_list):
             log_error(f"An unexpected error occurred during deletion: {e}")
             break
 
-def analyze_transactions(transactions_list):
+def analyze_transactions(transactions_list, return_data = False):
     print("\n--- Financial Summary ---")
     if not transactions_list:
-        print("No transactions to analyze. Please load or add transactions first.")
-        return
+        message = "No transactions to analyze. Please load or add transactions first."
+        if not return_data:
+            print(f"\n--- Financial Summary ---\n{message}")
+        return {} if return_data else None
     
     total_credits = 0.0
     total_debits = 0.0
@@ -360,20 +362,33 @@ def analyze_transactions(transactions_list):
                 totals_by_type[transaction_type] = amount
         except (ValueError, TypeError) as e:
             log_error(f"Error processing amount for financial analysis: {transaction.get('transaction_id', 'N/A')}. Error: {e}")
-            print(f"Warning: Skipping a transaction due to invalid amount for analysis (ID: {transaction.get('transaction_id', 'N/A')}).")
+            if not return_data:
+                print(f"Warning: Skipping a transaction due to invalid amount for analysis (ID: {transaction.get('transaction_id', 'N/A')}).")
             continue
 
-    print(f"Total Credits: ${total_credits:.2f}")
-    print(f"Total Debits: ${total_debits:.2f}")
-    print(f"Total Transfers: ${total_transfers:.2f}")
-    print(f"Net Balance: ${net_balance:.2f}")
+    summary_data = {
+        "total_credits": total_credits,
+        "total_debits": total_debits,
+        "total_transfers": total_transfers,
+        "net_balance": net_balance,
+        "totals_by_type": totals_by_type
+    }
 
-    print("\nTotals by Type:")
-    if totals_by_type:
-        for transaction_type, total_amount in totals_by_type.items():
-            print(f"- {transaction_type.replace('_', ' ').title()}: ${total_amount:.2f}")
+    if return_data:
+        return summary_data
     else:
-        print("No categorized transactions.")
+        print(f"Total Credits: ${total_credits:.2f}")
+        print(f"Total Debits: ${total_debits:.2f}")
+        print(f"Total Transfers: ${total_transfers:.2f}")
+        print(f"Net Balance: ${net_balance:.2f}")
+
+        print("\nTotals by Type:")
+        if totals_by_type:
+            for transaction_type, total_amount in totals_by_type.items():
+                print(f"- {transaction_type.replace('_', ' ').title()}: ${total_amount:.2f}")
+        else:
+            print("No categorized transactions.")
+        return None
 
 def save_transactions(transactions_list, filename='financial_transactions_short.csv'):
     header = ['transaction_id', 'date', 'customer_id', 'amount', 'type', 'description']
@@ -393,6 +408,42 @@ def save_transactions(transactions_list, filename='financial_transactions_short.
         log_error(f"Error writing transactions to '{filename}': {e}")
         print(f"Error writing transactions to '{filename}': {e}")
 
+def generate_report(transactions_data, filename='report.txt'):
+    print(f"\n--- Generating Financial Report to '{filename}' ---")
+
+    if not transactions_data:
+        report_content = "No transactions available to generate a report."
+        print(report_content)
+    else:
+        summary = analyze_transactions(transactions_data, return_data = True)
+
+        if not summary:
+            report_content = "Could not generate financial summary. No valid transactions found."
+            print(report_content)
+        else:
+            report_content = f"--- Financial Report ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')}) ---\n\n"
+            report_content += f"Total Credits: ${summary['total_credits']:.2f}\n"
+            report_content += f"Total Debits: ${summary['total_debits']:.2f}\n"
+            report_content += f"Total Transfers: ${summary['total_transfers']:.2f}\n"
+            report_content += f"Net Balance: ${summary['net_balance']:.2f}\n\n"
+
+            report_content += "Totals by Type: \n"
+            if summary['totals_by_type']:
+                for transaction_type, total_amount in summary['totals_by_type'].items():
+                    report_content += f"- {transaction_type.replace('_', ' ').title()}: ${total_amount:.2f}\n"
+            else:
+                report_content += "No categorized transactions. \n"
+
+    try:
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(report_content)
+        print(f"Financial report successfully generated to '{filename}'.")
+    except IOError as e:
+        log_error(f"Error writing report to '{filename}': {e}")
+        print(f"Error writing report to '{filename}': {e}")
+    except Exception as e:
+        log_error(f"An unexpected error occurred while generating the report: {e}")
+        print(f"An unexpected error occurred while generating the report: {e}")
 def main():
     transactions_data = []
     initialize_error_log()
@@ -406,6 +457,7 @@ def main():
         print("5. Delete Transactions")
         print("6. Analyze Transactions")
         print("7. Save Transactions")
+        print("8. Generate Report")
         print("9. Exit")
 
         choice = input("Enter your choice (1-9): ").strip()
@@ -427,6 +479,8 @@ def main():
         elif choice == '7': 
             save_transactions(transactions_data)
             print("Transactions saved successfully.")
+        elif choice == '8':
+            generate_report(transactions_data)
         elif choice == '9':
             print("Exiting Smart Personal Finance Analyzer. Goodbye!")
             break

@@ -1,0 +1,11 @@
+--- Financial Report (2025-06-22 18:39:04) ---
+
+Total Credits: $45799.93
+Total Debits: $-32394.11
+Total Transfers: $11427.85
+Net Balance: $24833.67
+
+Totals by Type: 
+- Credit: $45799.93
+- Debit: $-32394.11
+- Transfer: $11427.85
