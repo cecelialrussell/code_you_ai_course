@@ -24,6 +24,6 @@ Error Logging - Automatically logs processing errors and warnings to error.txt f
 
 Upon running the script, you will be presented with a menu including 9 options. Begin with Option 1 to load transactions.
 
-### Contributions
+### Credits
 
-This program was created with help from CODE:YOU and Google Gemini.
+This program was created with help from CODE:YOU mentors and Google Gemini.
